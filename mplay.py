@@ -51,14 +51,11 @@ def Image(path):
     f.readline()  # number of colors
     img = f.read(width * height * 3)
     f.close()
-    if sys.platform == 'darwin':
-        img = b''.join(reversed([row for row in chunks(img, width * 3)]))
+    img = b''.join(reversed([row for row in chunks(img, width * 3)]))
     return width, height, img
 
 
 def CopyPixels(tox, toy, w, h, fromx, fromy):
-    if sys.platform != 'darwin':
-        fromy = 650 - (fromy + h)
     glBlitFramebufferEXT(fromx, fromy, fromx + w, fromy + h,
                          tox, toy, tox + w, toy + h,
                          GL_COLOR_BUFFER_BIT, GL_NEAREST)
@@ -71,8 +68,6 @@ def DrawText(x, y, s, color=0):
             row -= 2
         fromx, fromy = (ord(c) % 16 * 7 + 770, 424 - row * 14)
         fromy += [0, -168, 168][color]
-        if sys.platform != 'darwin':
-            fromy = 650 - (fromy + 12)
         glBlitFramebufferEXT(fromx, fromy, fromx + 7, fromy + 12,
                              x, y, x + 7, y + 12,
                              GL_COLOR_BUFFER_BIT, GL_NEAREST)
