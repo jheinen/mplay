@@ -16,6 +16,21 @@ mplay
 * Transport controls
 * Keyboard shortcuts
 
+| Key                | Action                  |
+|:------------------:|:-----------------------:|
+| a                  | un-mute all channels    |
+| b/B                | toggle/solo bass        |
+| d/D                | toggle/solo drums       |
+| g/G                | toggle/solo guitar(s)   |
+| k/K                | toggle/solo keyboard(s) |
+| -/+                | decrease/increase tempo |
+| SPACE              | stop/resume song        |
+| > <                | transpose up/down       |
+| 1234567890!@#$%^   | select channel 1-16     |
+| TAB                | select next channel     |
+| ESC                | quit Mplay              |
+
+
 **Tips and Tricks:**
 
 *Mac OS X* and *Windows* systems come with a builtin software synthesizer (*Apple* DLS SoftSynth, *Microsoft* GS Wavetable SW Synth). On those systems *Mplay* runs out of the box. For *Linux*, however, it might be necessary to start a *TiMidity++* server:
@@ -40,6 +55,8 @@ mplay
         0 'VirMIDI 1-3     '
 	# aconnect 20:0 128:0
 
+
+-------------------------
 
 **Links:**
 
