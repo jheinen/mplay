@@ -23,10 +23,10 @@ mplay
 | d/D                | toggle/solo drums       |
 | g/G                | toggle/solo guitar(s)   |
 | k/K                | toggle/solo keyboard(s) |
+| 1234567890!@#$%^   | toggle channel 1-16     |
 | -/+                | decrease/increase tempo |
 | SPACE              | stop/resume song        |
 | > <                | transpose up/down       |
-| 1234567890!@#$%^   | select channel 1-16     |
 | TAB                | select next channel     |
 | ESC                | quit Mplay              |
 
