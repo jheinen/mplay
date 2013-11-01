@@ -4,11 +4,16 @@ Usage:
 """
 from setuptools import setup
 
+COPYRIGHT = 'Copyright 2013 Josef Heinen'
+
 setup(
-    app=["mplay.py"],
-    requires = [
-        'pyobjc-framework-cocoa',
-        'PyOpenGL'
-    ], 
-    setup_requires=["py2app"],
+    app=['mplay.py'],
+    data_files=['mixer.ppm'],
+    options={'py2app': {'argv_emulation': True,
+                        'iconfile': 'mplay.icns',
+                        'plist': {'CFBundleIdentifier': 'de.josefheinen.mplay',
+                                  'CFBundleVersion': '1.0.0',
+                                  'CFBundleShortVersionString': '1.0.0',
+                                  'NSHumanReadableCopyright': COPYRIGHT}}},
+    setup_requires=['py2app', 'pyobjc-framework-cocoa', 'PyOpenGL']
 )

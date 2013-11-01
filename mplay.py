@@ -343,20 +343,6 @@ def dialog():
     return None
 
 
-def top():
-    try:
-        stderr = os.dup(sys.stderr.fileno())
-        fd = os.open('/tmp/mplay.log', os.O_CREAT | os.O_WRONLY)
-        os.dup2(fd, sys.stderr.fileno())
-        from AppKit import NSApplication
-
-        app = NSApplication.sharedApplication()
-        app.activateIgnoringOtherApps_(1)
-        os.dup2(stderr, sys.stderr.fileno())
-    except BaseException:
-        pass
-
-
 def main():
     glutInit(sys.argv)
 
@@ -365,7 +351,6 @@ def main():
     else:
         path = None
     if sys.platform == 'darwin':
-        top()
         if not path:
             path = dialog()
 
