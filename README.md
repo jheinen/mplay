@@ -55,6 +55,15 @@ mplay
         0 'VirMIDI 1-3     '
 	# aconnect 20:0 128:0
 
+For *Mac OS X* you can easily build a standalone application:
+
+	virtualenv python
+	source python/bin/activate
+	pip install py2app
+	pip install PyOpenGL
+	pip install pyobjc-framework-cocoa
+	python setup.py py2app
+	dropdmg dist/mplay.app --layout-name='Mac App' --destination=`pwd`
 
 -------------------------
 
