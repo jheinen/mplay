@@ -122,7 +122,7 @@ meta = (
     'Instrument', 'Lyric', 'Marker', 'Cue Point')
 
 
-def Log(message):
+def dbg(message):
     print(message)
 
 
@@ -146,7 +146,7 @@ class SMF:
         self.device = None
         self.format = 0
         self.tracks = 0
-        self.mf = b''
+        self.mf = bytearray(0)
         self.off = 0
         self.ev = []
         self.status = 0
@@ -232,7 +232,7 @@ class SMF:
                 num_bytes = self.extractnumber()
                 self.off += num_bytes
                 if debug:
-                    Log('%06d System Exclusive (%d bytes)' % (at, num_bytes))
+                    dbg('%06d System Exclusive (%d bytes)' % (at, num_bytes))
             elif me == 0xff:
                 me_type = self.extractbyte()
                 num_bytes = self.extractnumber()
@@ -240,44 +240,46 @@ class SMF:
                     text = self.extractbytes(num_bytes)
                     self.ev.append([at, me, me_type, text])
                     if debug:
-                        Log('%06d %s: %s' % (at, meta[me_type], printable(text)))
+                        dbg('%06d %s: %s' % (at, meta[me_type],
+                            printable(text)))
                 elif me_type <= 0x0f:
-                    self.ev.append([at, me, me_type, self.extractbytes(num_bytes)])
+                    self.ev.append(
+                        [at, me, me_type, self.extractbytes(num_bytes)])
                 elif me_type == 0x20:
                     self.ev.append([at, me, me_type, self.extractbyte()])
                     if debug:
-                        Log('%06d Channel Prefix 0x%02x' % (at, byte1))
+                        dbg('%06d Channel Prefix 0x%02x' % (at, byte1))
                 elif me_type == 0x21:
                     self.ev.append([at, me, me_type, self.extractbyte()])
                     if debug:
-                        Log('%06d Port Number 0x%02x' % (at, byte1))
+                        dbg('%06d Port Number 0x%02x' % (at, byte1))
                 elif me_type == 0x2f:
                     if debug:
-                        Log('%06d End of Track' % at)
+                        dbg('%06d End of Track' % at)
                     return
                 elif me_type == 0x51:
                     data = self.extractbytes(3)
                     self.ev.append([at, me, me_type, data])
                     if debug:
                         tempo = (data[0] << 16) | (data[1] << 8) | data[2]
-                        Log('%06d Tempo 0x%02x 0x%02x 0x%02x (%d, %d bpm)' %
+                        dbg('%06d Tempo 0x%02x 0x%02x 0x%02x (%d, %d bpm)' %
                             (at, data[0], data[1], data[2],
                              tempo, 60000000 // tempo))
                 elif me_type == 0x58:
                     data = self.extractbytes(4)
                     self.ev.append([at, me, me_type, data])
                     if debug:
-                        Log('%06d Time 0x%02x 0x%02x 0x%02x 0x%02x' %
+                        dbg('%06d Time 0x%02x 0x%02x 0x%02x 0x%02x' %
                             (at, data[0], data[1], data[2], data[3]))
                 elif me_type == 0x59:
                     data = self.extractbytes(2)
                     self.ev.append([at, me, me_type, data])
                     if debug:
-                        Log('%06d Key 0x%02x 0x%02x' % (at, data[0], data[1]))
+                        dbg('%06d Key 0x%02x 0x%02x' % (at, data[0], data[1]))
                 else:
                     self.off += num_bytes
                     if debug:
-                        Log('%06d Meta Event 0x%02x (%d bytes)' %
+                        dbg('%06d Meta Event 0x%02x (%d bytes)' %
                             (at, me_type, num_bytes))
             else:
                 byte1 = me
@@ -301,10 +303,10 @@ class SMF:
                         else:
                             s = ''
                         if state in [0, 1, 2, 3, 6]:
-                            Log('%06d %s 0x%02x 0x%02x 0x%02x%s' %
+                            dbg('%06d %s 0x%02x 0x%02x 0x%02x%s' %
                                 (at, messages[state], chan, byte1, byte2, s))
                         else:
-                            Log('%06d %s 0x%02x 0x%02x' %
+                            dbg('%06d %s 0x%02x 0x%02x' %
                                 (at, messages[state], chan, byte1))
                 else:
                     print('Corrupt MIDI file')
@@ -319,7 +321,7 @@ class SMF:
             self.tracks = self.extractshort()
             self.division = self.extractshort()
         if debug:
-            Log('Format: %d, Tracks: %d, Division: %d' %
+            dbg('Format: %d, Tracks: %d, Division: %d' %
                 (self.format, self.tracks, self.division))
         for track in range(self.tracks):
             if self.bytes(4) == b'MTrk':
@@ -335,7 +337,8 @@ class SMF:
         for ev in self.ev:
             (at, message, me_type, data) = ev
             if message == 0xff and me_type == 0x51:
-                self.playing_time += (at - start) / self.division * tempo / 1000
+                self.playing_time += (at - start) / self.division * \
+                    tempo / 1000
                 start = at
                 tempo = (data[0] << 16) | (data[1] << 8) | data[2]
         self.playing_time += (at - start) / self.division * tempo / 1000
@@ -346,9 +349,12 @@ class SMF:
         mins = secs // 60
         secs %= 60
         hsecs %= 100
-        return '%-12s     Format:  %d     Tracks:  %d    Playing Time:  %02d:%02d.%02d     Key:  %2s%1s/%-3d' % (
-            self.path, self.format, self.tracks, mins, secs, hsecs, keys[self.key + 7], modes[self.mode],
-            self.key_shift)
+        return \
+            '%-12s     Format:  %d     Tracks:  %d    ' \
+            'Playing Time:  %02d:%02d.%02d     Key:  %2s%1s/%-3d' % (
+                self.path, self.format, self.tracks, mins, secs, hsecs,
+                keys[self.key + 7], modes[self.mode],
+                self.key_shift)
 
     def songinfo(self):
         if self.pause != 0:
@@ -362,13 +368,14 @@ class SMF:
         secs %= 60
         hsecs %= 100
         return \
-            'Clock:  %02d:%02d.%02d   Song Position:  %04d:%02d:%03d   Tempo:  %3d bpm   Time:  %02d/%02d  %02d/%02d' %\
-            (mins, secs, hsecs,
-            ticks / self.division / 4 + 1,
-            ticks / self.division % self.numerator + 1,
-            ticks * 1000 / self.division % 1000,
-            self.bpm, self.numerator, self.denominator,
-            self.clocks_per_beat, self.notes_per_quarter)
+            'Clock:  %02d:%02d.%02d   Song Position:  %04d:%02d:%03d   ' \
+            'Tempo:  %3d bpm   Time:  %02d/%02d  %02d/%02d' % (
+                mins, secs, hsecs,
+                ticks / self.division / 4 + 1,
+                ticks / self.division % self.numerator + 1,
+                ticks * 1000 / self.division % 1000,
+                self.bpm, self.numerator, self.denominator,
+                self.clocks_per_beat, self.notes_per_quarter)
 
     def beatinfo(self):
         if self.pause != 0:
@@ -381,26 +388,27 @@ class SMF:
         return '%-80s' % self.text
 
     def chordinfo(self):
-        keys = 0
+        keys_pressed = 0
         for channel in range(16):
             info = self.channel[channel]
             if channel != 9 and info['family'] != 'Bass':
                 for note in info['notes']:
-                    keys |= (1 << (note % 12))
-        if bin(keys).count("1") in [3, 4, 5]:
+                    keys_pressed |= (1 << (note % 12))
+        if bin(keys_pressed).count("1") in [3, 4, 5]:
             for key in range(12):
-                if keys in chords:
-                    self.chord = '%-10s' % (notes[key] + chords[keys] + '   ')
+                if keys_pressed in chords:
+                    self.chord = '%-10s' % (
+                        notes[key] + chords[keys_pressed] + '   ')
                     self.notes = []
                     for note in range(12):
-                        if keys & (1 << note):
+                        if keys_pressed & (1 << note):
                             self.chord += '  %s' % notes[(key + note) % 12]
                             self.notes.append(60 + key + note)
                     self.chord = '%-50s' % self.chord
                     break
-                if keys & 1:
-                    keys |= (1 << 12)
-                keys = (keys >> 1) & 0xfff
+                if keys_pressed & 1:
+                    keys_pressed |= (1 << 12)
+                keys_pressed = (keys_pressed >> 1) & 0xfff
         return self.chord, self.notes
 
     def channelinfo(self, channel):
@@ -430,7 +438,8 @@ class SMF:
         for ev in self.ev:
             (at, message, byte1, byte2) = ev
             if at > beat * self.division:
-                self.elapsed_time = time() - at / self.division / 1000000.0 * self.tempo
+                self.elapsed_time = time() - at / self.division / 1000000.0 * \
+                    self.tempo
                 break
             self.next += 1
 
@@ -444,7 +453,8 @@ class SMF:
             now = time()
             tempo = self.tempo
             self.tempo = 60000000 / self.bpm * 4 / self.denominator
-            self.elapsed_time = now - (now - self.elapsed_time) * self.tempo / tempo
+            self.elapsed_time = now - (now - self.elapsed_time) * \
+                self.tempo / tempo
         elif 'bar' in info:
             now = (time() - self.elapsed_time) * 1000
             beat = int(now * 1000 / self.tempo)
@@ -511,9 +521,9 @@ class SMF:
             self.writemidi([0xf8])
             self.midi_clock += self.division / 24
 
-    def play(self, device, wait=True):
+    def play(self, dev, wait=True):
         if not self.start:
-            self.device = device
+            self.device = dev
             self.device.mididataset1(0x40007f, 0x00)
             sleep(0.04)
             self.writemidi([0xfc, 0xfa])
@@ -527,7 +537,8 @@ class SMF:
             now = time() - self.elapsed_time
             while at > now * self.division * 1000000 / self.tempo:
                 self.timing(at)
-                delta = (at - now * self.division * 1000000 / self.tempo) / 1000
+                delta = (at - now * self.division * 1000000 / self.tempo) / \
+                    1000
                 if wait:
                     sleep(min(delta, 1.0 / (self.division / 24)))
                     now = time() - self.elapsed_time
@@ -547,7 +558,8 @@ class SMF:
                     tempo = self.tempo
                     self.tempo = (data[0] << 16) | (data[1] << 8) | data[2]
                     self.bpm = 60000000 / self.tempo * self.denominator / 4
-                    self.elapsed_time = now - (now - self.elapsed_time) * self.tempo / tempo
+                    self.elapsed_time = now - (now - self.elapsed_time) * \
+                        self.tempo / tempo
                 elif me_type == 0x58:
                     self.numerator = data[0]
                     self.denominator = 1 << data[1]
@@ -617,8 +629,8 @@ def read(path):
     return midi
 
 
-def play(midi, device, wait=True):
-    return midi.play(device, wait)
+def play(midi, dev, wait=True):
+    return midi.play(dev, wait)
 
 
 def fileinfo(midi):
@@ -654,6 +666,6 @@ def setchannel(midi, channel, **info):
 
 
 if __name__ == '__main__':
-    midi = read(sys.argv[1])
-    device = midiDevice()
-    play(midi, device)
+    midi_file = read(sys.argv[1])
+    midi_device = midiDevice()
+    play(midi_file, midi_device)

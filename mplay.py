@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
 import sys
-import os
 from math import sin, cos, atan2, pi
 from time import sleep, time
 
 from OpenGL.GLUT import glutAddMenuEntry, glutAddSubMenu, glutAttachMenu, \
-    glutCreateMenu,glutCreateWindow, glutDisplayFunc, glutIdleFunc, glutInit, \
-    glutInitDisplayMode, glutInitWindowPosition, glutInitWindowSize, \
-    glutKeyboardFunc, glutMainLoop, glutMotionFunc, glutMouseFunc, \
-    glutSwapBuffers, GLUT_DOUBLE, GLUT_DOWN, GLUT_LEFT_BUTTON, GLUT_RGB, \
-    GLUT_RIGHT_BUTTON
+    glutCreateMenu, glutCreateWindow, glutDisplayFunc, glutIdleFunc, \
+    glutInit, glutInitDisplayMode, glutInitWindowPosition, \
+    glutInitWindowSize, glutKeyboardFunc, glutMainLoop, glutMotionFunc, \
+    glutMouseFunc, glutSwapBuffers, GLUT_DOUBLE, GLUT_DOWN, GLUT_LEFT_BUTTON, \
+    GLUT_RGB, GLUT_RIGHT_BUTTON
 from OpenGL.GL import glBegin, glClear, glColor3f, glColor4f, glDrawPixels, \
     glEnd, glLoadIdentity, glMatrixMode, glOrtho, glPixelStorei, glVertex2f, \
     GL_COLOR_BUFFER_BIT, GL_LINES, GL_MODELVIEW, GL_NEAREST, GL_PROJECTION, \
@@ -33,10 +32,10 @@ elif sys.platform == 'linux2':
     from linux2midi import midiDevice
 
 MUTE_ON_OFF = {b'b': ['Bass'], b'g': ['Guitar'],
-    b'k': ['Piano', 'Organ', 'Strings', 'Ensemble']}
+               b'k': ['Piano', 'Organ', 'Strings', 'Ensemble']}
 
 SOLO_ON = {b'B': ['Bass'], b'G': ['Guitar'],
-    b'K': ['Piano', 'Organ', 'Strings', 'Ensemble']}
+           b'K': ['Piano', 'Organ', 'Strings', 'Ensemble']}
 
 
 def chunks(l, n):
@@ -44,7 +43,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def Image(path):
+def read_image(path):
     f = open(path, 'rb')
     f.readline()  # magic number
     width, height = map(int, f.readline().split())
@@ -55,13 +54,13 @@ def Image(path):
     return width, height, img
 
 
-def CopyPixels(tox, toy, w, h, fromx, fromy):
+def copy_pixels(tox, toy, w, h, fromx, fromy):
     glBlitFramebufferEXT(fromx, fromy, fromx + w, fromy + h,
                          tox, toy, tox + w, toy + h,
                          GL_COLOR_BUFFER_BIT, GL_NEAREST)
 
 
-def DrawText(x, y, s, color=0):
+def draw_text(x, y, s, color=0):
     for c in s:
         row = ord(c) // 16
         if ord(c) > 127:
@@ -74,7 +73,7 @@ def DrawText(x, y, s, color=0):
         x += 7
 
 
-def DrawLine(x1, y1, x2, y2):
+def draw_line(x1, y1, x2, y2):
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glOrtho(0, 730, 0, 650, 0, 1)
@@ -85,14 +84,14 @@ def DrawLine(x1, y1, x2, y2):
     glEnd()
 
 
-def PaintKnob(centerx, centery, value):
+def paint_knob(centerx, centery, value):
     angle = pi * (value - 64) / 64 * 0.75
     x, y = (centerx + 9 * sin(angle), centery + 9 * cos(angle))
     glColor3f(1, 1, 1)
-    DrawLine(centerx, centery + 9, x, y + 9)
+    draw_line(centerx, centery + 9, x, y + 9)
 
 
-def DrawRect(x, y, width, height):
+def draw_rect(x, y, width, height):
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
     glOrtho(0, 730, 0, 650, 0, 1)
@@ -106,14 +105,14 @@ def DrawRect(x, y, width, height):
     glEnd()
 
 
-def PaintNotes(notes):
+def paint_notes(notes):
     key = (2, 10, 20, 33, 39, 57, 66, 76, 86, 94, 107, 113)
     for note in notes:
         x = 312 + key[note % 12]
         if (note % 12) in [1, 3, 6, 8, 10]:
-            DrawRect(x, 48, 7, 24)
+            draw_rect(x, 48, 7, 24)
         else:
-            DrawRect(x, 14, 10, 24)
+            draw_rect(x, 14, 10, 24)
 
 
 class Player():
@@ -139,62 +138,62 @@ class Player():
             x = 10 + channel * 38
             if info['used']:
                 name = info['name'] if channel != 9 else 'Drums'
-                DrawText(620, 562 - channel * 14, name, color)
+                draw_text(620, 562 - channel * 14, name, color)
                 if self.muted[channel]:
-                    CopyPixels(x - 6, 633, 31, 11, 735, 633)
+                    copy_pixels(x - 6, 633, 31, 11, 735, 633)
                 if self.solo[channel]:
-                    CopyPixels(x - 6, 619, 31, 10, 735, 619)
-            PaintKnob(x + 9, 581, info['sense'])
-            DrawText(x, 559, '%3d' % info['sense'], color)
-            PaintKnob(x + 9, 523, info['delay'])
-            DrawText(x, 501, '%3d' % info['delay'], color)
-            PaintKnob(x + 9, 465, info['chorus'])
-            DrawText(x, 443, '%3d' % info['chorus'], color)
-            PaintKnob(x + 9, 407, info['reverb'])
-            DrawText(x, 386, '%3d' % info['reverb'], color)
+                    copy_pixels(x - 6, 619, 31, 10, 735, 619)
+            paint_knob(x + 9, 581, info['sense'])
+            draw_text(x, 559, '%3d' % info['sense'], color)
+            paint_knob(x + 9, 523, info['delay'])
+            draw_text(x, 501, '%3d' % info['delay'], color)
+            paint_knob(x + 9, 465, info['chorus'])
+            draw_text(x, 443, '%3d' % info['chorus'], color)
+            paint_knob(x + 9, 407, info['reverb'])
+            draw_text(x, 386, '%3d' % info['reverb'], color)
             pan = info['pan']
-            PaintKnob(x + 9, 349, pan)
+            paint_knob(x + 9, 349, pan)
             lr = 'L R'[(pan > 64) - (pan < 64) + 1]
-            DrawText(x, 327, '%s%2d' % (lr, abs(pan - 64)), color)
+            draw_text(x, 327, '%s%2d' % (lr, abs(pan - 64)), color)
             if info['used']:
-                DrawText(x, 310, '%3d' % info['instrument'], color)
-                DrawText(x - 5, 295, '%2d' % info['variation'], color)
-                DrawText(x, 204, '%3d' % info['level'], color)
-                CopyPixels(x + 13, 295, 12, 15, 754, 295)
+                draw_text(x, 310, '%3d' % info['instrument'], color)
+                draw_text(x - 5, 295, '%2d' % info['variation'], color)
+                draw_text(x, 204, '%3d' % info['level'], color)
+                copy_pixels(x + 13, 295, 12, 15, 754, 295)
                 level = info['level']
             else:
                 level = 0
-            CopyPixels(x - 6, 204, 12, 91, 4, 204)
-            CopyPixels(x - 6, 219 + level // 2, 12, 11, 735, 225)
-            CopyPixels(x + 13, 219, 12, info['intensity'] // 2, 754, 219)
+            copy_pixels(x - 6, 204, 12, 91, 4, 204)
+            copy_pixels(x - 6, 219 + level // 2, 12, 11, 735, 225)
+            copy_pixels(x + 13, 219, 12, info['intensity'] // 2, 754, 219)
             if info['intensity'] >= 4:
                 info['intensity'] -= 4
             else:
                 info['intensity'] = 0
 
-        DrawText(15, 177, fileinfo(self.midi))
-        DrawText(15, 162, songinfo(self.midi))
-        DrawText(15, 142, lyrics(self.midi), 1)
+        draw_text(15, 177, fileinfo(self.midi))
+        draw_text(15, 162, songinfo(self.midi))
+        draw_text(15, 142, lyrics(self.midi), 1)
         chord, notes = chordinfo(self.midi)
-        DrawText(15, 120, chord)
-        PaintNotes(notes)
+        draw_text(15, 120, chord)
+        paint_notes(notes)
         ticker = '            Python MIDI Player  \xa8 2013 by Josef Heinen '
         beat = beatinfo(self.midi)
         shift = beat % len(ticker.strip()) + 1
         if shift + 12 < len(ticker):
-            DrawText(630, 628, ticker[shift: shift + 12])
+            draw_text(630, 628, ticker[shift: shift + 12])
         for led in range(4):
             if beat % 4 == led:
-                CopyPixels(632 + led * 20, 309, 16, 30, 770, 585)
+                copy_pixels(632 + led * 20, 309, 16, 30, 770, 585)
         if self.pause:
-            CopyPixels(665, 251, 10, 10, 850, 604)
+            copy_pixels(665, 251, 10, 10, 850, 604)
         else:
-            CopyPixels(665, 251, 10, 10, 860, 604)
+            copy_pixels(665, 251, 10, 10, 860, 604)
 
-    def changeMuteState(self, channel):
+    def change_mute_state(self, channel):
         setchannel(self.midi, channel, muted=self.muted[channel])
 
-    def changeSoloState(self, channel):
+    def change_solo_state(self, channel):
         self.solo[channel] = not self.solo[channel]
         if self.solo[channel]:
             setchannel(self.midi, channel, solo=self.solo[channel])
@@ -206,16 +205,16 @@ class Player():
                 self.muted[ch] = False
                 setchannel(self.midi, ch, muted=False)
 
-    def Display(self):
+    def display_func(self):
         self.update()
         glutSwapBuffers()
 
-    def Key(self, key, x, y):
+    def keyboard_func(self, key, x, y):
         if key == b'\x1b':
             setsong(self.midi, action='exit')
             sys.exit(0)
         elif key == b'\t':
-            if self.selection != None:
+            if self.selection is not None:
                 self.selection = (self.selection + 1) % 16
             else:
                 self.selection = 0
@@ -229,22 +228,22 @@ class Player():
         elif key in b'1234567890!@#$%^':
             channel = b'1234567890!@#$%^'.index(key)
             self.muted[channel] = not self.muted[channel]
-            self.changeMuteState(channel)
+            self.change_mute_state(channel)
         elif key == b'a':
             for channel in range(16):
                 self.muted[channel] = self.solo[channel] = False
-                self.changeMuteState(channel)
+                self.change_mute_state(channel)
         elif key == b'd':
             self.muted[9] = not self.muted[9]
-            self.changeMuteState(9)
+            self.change_mute_state(9)
         elif key == b'D':
-            self.changeSoloState(9)
+            self.change_solo_state(9)
         elif key in MUTE_ON_OFF:
             for channel in range(16):
                 info = channelinfo(self.midi, channel)
                 if channel != 9 and info['family'] in MUTE_ON_OFF[key]:
                     self.muted[channel] = not self.muted[channel]
-                self.changeMuteState(channel)
+                self.change_mute_state(channel)
         elif key in SOLO_ON:
             for channel in range(16):
                 info = channelinfo(self.midi, channel)
@@ -253,7 +252,7 @@ class Player():
                 else:
                     self.muted[channel] = True
                     self.solo[channel] = False
-                self.changeMuteState(channel)
+                self.change_mute_state(channel)
         elif key == b'<':
             setsong(self.midi, shift=-1)
         elif key == b'>':
@@ -263,7 +262,7 @@ class Player():
         elif key == b'+':
             setsong(self.midi, bpm=+1)
 
-    def Mouse(self, button, state, x, y):
+    def mouse_func(self, button, state, x, y):
         self.button = button == GLUT_LEFT_BUTTON and state == GLUT_DOWN
         if 630 < x < 710 and self.button:
             if 360 < y < 370:
@@ -282,13 +281,13 @@ class Player():
             if self.button:
                 if 6 < y < 18:
                     self.muted[channel] = not self.muted[channel]
-                    self.changeMuteState(channel)
+                    self.change_mute_state(channel)
                 elif 20 < y < 32:
-                    self.changeSoloState(channel)
+                    self.change_solo_state(channel)
                 else:
                     self.selection = channel
 
-    def Motion(self, x, y):
+    def motion_func(self, x, y):
         if x >= 608:
             return
         channel = x // 38
@@ -312,10 +311,10 @@ class Player():
                 value = min(max((425 - y) * 2, 0), 127)
                 setchannel(self.midi, channel, level=value)
 
-    def processEvents(self):
+    def process_events(self):
         delta = play(self.midi, self.device, wait=False)
         if time() - self.last_update > 0.04:
-            self.Display()
+            self.display_func()
             self.last_update = time()
         if delta > 0.02:
             delta = 0.02
@@ -323,7 +322,7 @@ class Player():
             sys.exit(0)
         sleep(delta)
 
-    def changeInstrument(self, value):
+    def change_instrument(self, value):
         if self.selection:
             setchannel(self.midi, self.selection, instrument=value)
         return 0
@@ -360,7 +359,7 @@ def main():
 
     win = glutCreateWindow(b'MIDI Player')
 
-    (width, height, img) = Image('mixer.ppm')
+    (width, height, img) = read_image('mixer.ppm')
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
     rbo = glGenRenderbuffersEXT(1)
@@ -380,19 +379,19 @@ def main():
 
     player = Player(win, path, width, height)
 
-    glutDisplayFunc(player.Display)
-    glutKeyboardFunc(player.Key)
-    glutMouseFunc(player.Mouse)
-    glutMotionFunc(player.Motion)
-    glutIdleFunc(player.processEvents)
+    glutDisplayFunc(player.display_func)
+    glutKeyboardFunc(player.keyboard_func)
+    glutMouseFunc(player.mouse_func)
+    glutMotionFunc(player.motion_func)
+    glutIdleFunc(player.process_events)
 
     submenus = []
     for instrument in range(128):
         if instrument % 8 == 0:
             submenus.append([families[instrument // 8],
-                             glutCreateMenu(player.changeInstrument)])
+                             glutCreateMenu(player.change_instrument)])
         glutAddMenuEntry(instruments[instrument].encode('ascii'), instrument)
-    glutCreateMenu(player.changeInstrument)
+    glutCreateMenu(player.change_instrument)
     for family, submenu in submenus:
         glutAddSubMenu(family.encode('ascii'), submenu)
     glutAttachMenu(GLUT_RIGHT_BUTTON)
