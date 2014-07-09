@@ -3,6 +3,7 @@
 import sys
 from math import sin, cos, atan2, pi
 from time import sleep, time
+from ctypes import c_uint
 
 from OpenGL.GLUT import glutAddMenuEntry, glutAddSubMenu, glutAttachMenu, \
     glutCreateMenu, glutCreateWindow, glutDisplayFunc, glutIdleFunc, \
@@ -362,11 +363,11 @@ def main():
     (width, height, img) = read_image('mixer.ppm')
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
 
-    rbo = glGenRenderbuffersEXT(1)
+    rbo = c_uint(int(glGenRenderbuffersEXT(1)))
     glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rbo)
     glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGB, width, height)
 
-    fbo = glGenFramebuffersEXT(1)
+    fbo = c_uint(int(glGenFramebuffersEXT(1)))
     glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fbo)
     glFramebufferRenderbufferEXT(GL_READ_FRAMEBUFFER_EXT,
                                  GL_COLOR_ATTACHMENT0_EXT,

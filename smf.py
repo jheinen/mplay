@@ -668,4 +668,5 @@ def setchannel(midi, channel, **info):
 if __name__ == '__main__':
     midi_file = read(sys.argv[1])
     midi_device = midiDevice()
+    midi_device.mididataset1(0x400130, 0x04)
     play(midi_file, midi_device)
