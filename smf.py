@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import, division, print_function
+
 import sys
 import os
 from time import time, sleep
@@ -539,8 +541,9 @@ class SMF:
                 self.timing(at)
                 delta = (at - now * self.division * 1000000 / self.tempo) / \
                     1000
+                delta = min(delta, 1.0 / (self.division / 24))
                 if wait:
-                    sleep(min(delta, 1.0 / (self.division / 24)))
+                    sleep(delta)
                     now = time() - self.elapsed_time
                 else:
                     return delta

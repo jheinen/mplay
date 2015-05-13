@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import, division
+
 import sys
 from math import sin, cos, atan2, pi
 from time import sleep, time
@@ -9,8 +11,8 @@ from OpenGL.GLUT import glutAddMenuEntry, glutAddSubMenu, glutAttachMenu, \
     glutCreateMenu, glutCreateWindow, glutDisplayFunc, glutIdleFunc, \
     glutInit, glutInitDisplayMode, glutInitWindowPosition, \
     glutInitWindowSize, glutKeyboardFunc, glutMainLoop, glutMotionFunc, \
-    glutMouseFunc, glutSwapBuffers, GLUT_DOUBLE, GLUT_DOWN, GLUT_LEFT_BUTTON, \
-    GLUT_RGB, GLUT_RIGHT_BUTTON
+    glutMouseFunc, glutSwapBuffers, glutPostRedisplay, \
+    GLUT_DOUBLE, GLUT_DOWN, GLUT_LEFT_BUTTON, GLUT_RGB, GLUT_RIGHT_BUTTON
 from OpenGL.GL import glBegin, glClear, glColor3f, glColor4f, glDrawPixels, \
     glEnd, glLoadIdentity, glMatrixMode, glOrtho, glPixelStorei, glVertex2f, \
     GL_COLOR_BUFFER_BIT, GL_LINES, GL_MODELVIEW, GL_NEAREST, GL_PROJECTION, \
@@ -123,7 +125,6 @@ class Player():
         self.device = midiDevice()
         self.muted = 16 * [False]
         self.solo = 16 * [False]
-        self.last_update = 0
         self.width = width
         self.height = height
         self.button = False
@@ -314,14 +315,11 @@ class Player():
 
     def process_events(self):
         delta = play(self.midi, self.device, wait=False)
-        if time() - self.last_update > 0.04:
-            self.display_func()
-            self.last_update = time()
-        if delta > 0.02:
-            delta = 0.02
-        elif delta == 0:
+        glutPostRedisplay()
+        if delta > 0:
+            sleep(delta)
+        else:
             sys.exit(0)
-        sleep(delta)
 
     def change_instrument(self, value):
         if self.selection:
@@ -343,16 +341,15 @@ def dialog():
     return None
 
 
-def main():
+def main(path=None):
     glutInit(sys.argv)
 
-    if len(sys.argv) > 1:
-        path = sys.argv[1]
-    else:
-        path = None
     if sys.platform == 'darwin':
         if not path:
             path = dialog()
+
+    if not path:
+        sys.exit(0)
 
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE)
     glutInitWindowPosition(0, 0)
@@ -401,4 +398,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1:
+        main(sys.argv[1])
+    else:
+        main()
