@@ -4,8 +4,7 @@ from __future__ import absolute_import, division
 
 import sys
 from math import sin, cos, atan2, pi
-from time import sleep, time
-from ctypes import c_uint
+from time import sleep
 
 from OpenGL.GLUT import (glutAddMenuEntry, glutAddSubMenu, glutAttachMenu,
                          glutCreateMenu, glutCreateWindow, glutDisplayFunc,
