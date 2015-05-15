@@ -7,22 +7,22 @@ from math import sin, cos, atan2, pi
 from time import sleep, time
 from ctypes import c_uint
 
-from OpenGL.GLUT import glutAddMenuEntry, glutAddSubMenu, glutAttachMenu, \
-    glutCreateMenu, glutCreateWindow, glutDisplayFunc, glutIdleFunc, \
-    glutInit, glutInitDisplayMode, glutInitWindowPosition, \
-    glutInitWindowSize, glutKeyboardFunc, glutMainLoop, glutMotionFunc, \
-    glutMouseFunc, glutSwapBuffers, glutPostRedisplay, \
-    GLUT_DOUBLE, GLUT_DOWN, GLUT_LEFT_BUTTON, GLUT_RGB, GLUT_RIGHT_BUTTON
-from OpenGL.GL import glBegin, glClear, glColor3f, glColor4f, glDrawPixels, \
-    glEnd, glLoadIdentity, glMatrixMode, glOrtho, glPixelStorei, glVertex2f, \
-    GL_COLOR_BUFFER_BIT, GL_LINES, GL_MODELVIEW, GL_NEAREST, GL_PROJECTION, \
-    GL_QUADS, GL_RGB, GL_UNPACK_ALIGNMENT, GL_UNSIGNED_BYTE
-from OpenGL.GL.EXT.framebuffer_object import glBindFramebufferEXT, \
-    glBindRenderbufferEXT, glGenFramebuffersEXT, glGenRenderbuffersEXT, \
-    glFramebufferRenderbufferEXT, glRenderbufferStorageEXT, \
-    GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT
-from OpenGL.GL.EXT.framebuffer_blit import glBlitFramebufferEXT, \
-    GL_DRAW_FRAMEBUFFER_EXT, GL_READ_FRAMEBUFFER_EXT
+from OpenGL.GLUT import (glutAddMenuEntry, glutAddSubMenu, glutAttachMenu,
+                         glutCreateMenu, glutCreateWindow, glutDisplayFunc,
+                         glutIdleFunc, glutInit, glutInitDisplayMode,
+                         glutInitWindowPosition, glutInitWindowSize,
+                         glutKeyboardFunc, glutMainLoop, glutMotionFunc,
+                         glutMouseFunc, glutSwapBuffers, glutPostRedisplay,
+                         GLUT_DOUBLE, GLUT_DOWN, GLUT_LEFT_BUTTON, GLUT_RGB,
+                         GLUT_RIGHT_BUTTON)
+from OpenGL.GL import (glBegin, glEnd, glColor3f, glLoadIdentity, glMatrixMode,
+                       glOrtho, glScale, glPixelStorei, glVertex2f,
+                       glGenTextures, glBindTexture, glTexImage2D,
+                       glTexParameteri, glTexCoord2f, glEnable, glDisable,
+                       GL_TEXTURE, GL_TEXTURE_MIN_FILTER,
+                       GL_TEXTURE_MAG_FILTER, GL_TEXTURE_2D, GL_LINES,
+                       GL_NEAREST, GL_PROJECTION, GL_QUADS, GL_RGB,
+                       GL_UNPACK_ALIGNMENT, GL_UNSIGNED_BYTE)
 
 from smf import read, play, fileinfo, songinfo, beatinfo, lyrics, chordinfo, \
     setsong, channelinfo, setchannel, families, instruments
@@ -58,9 +58,18 @@ def read_image(path):
 
 
 def copy_pixels(tox, toy, w, h, fromx, fromy):
-    glBlitFramebufferEXT(fromx, fromy, fromx + w, fromy + h,
-                         tox, toy, tox + w, toy + h,
-                         GL_COLOR_BUFFER_BIT, GL_NEAREST)
+    glEnable(GL_TEXTURE_2D)
+    glBegin(GL_QUADS)
+    glTexCoord2f(fromx, fromy)
+    glVertex2f(tox, toy)
+    glTexCoord2f(fromx+w, fromy)
+    glVertex2f(tox+w, toy)
+    glTexCoord2f(fromx+w, fromy+h)
+    glVertex2f(tox+w, toy+h)
+    glTexCoord2f(fromx, fromy+h)
+    glVertex2f(tox, toy+h)
+    glEnd()
+    glDisable(GL_TEXTURE_2D)
 
 
 def draw_text(x, y, s, color=0):
@@ -70,17 +79,11 @@ def draw_text(x, y, s, color=0):
             row -= 2
         fromx, fromy = (ord(c) % 16 * 7 + 770, 424 - row * 14)
         fromy += [0, -168, 168][color]
-        glBlitFramebufferEXT(fromx, fromy, fromx + 7, fromy + 12,
-                             x, y, x + 7, y + 12,
-                             GL_COLOR_BUFFER_BIT, GL_NEAREST)
+        copy_pixels(x, y, 7, 12, fromx, fromy)
         x += 7
 
 
 def draw_line(x1, y1, x2, y2):
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    glOrtho(0, 730, 0, 650, 0, 1)
-    glMatrixMode(GL_MODELVIEW)
     glBegin(GL_LINES)
     glVertex2f(x1, y1)
     glVertex2f(x2, y2)
@@ -90,22 +93,18 @@ def draw_line(x1, y1, x2, y2):
 def paint_knob(centerx, centery, value):
     angle = pi * (value - 64) / 64 * 0.75
     x, y = (centerx + 9 * sin(angle), centery + 9 * cos(angle))
-    glColor3f(1, 1, 1)
     draw_line(centerx, centery + 9, x, y + 9)
 
 
 def draw_rect(x, y, width, height):
-    glMatrixMode(GL_PROJECTION)
-    glLoadIdentity()
-    glOrtho(0, 730, 0, 650, 0, 1)
-    glMatrixMode(GL_MODELVIEW)
-    glColor4f(0.71, 0.83, 1, 0.3)
+    glColor3f(0.71, 0.83, 1)
     glBegin(GL_QUADS)
     glVertex2f(x, y)
     glVertex2f(x + width, y)
     glVertex2f(x + width, y + height)
     glVertex2f(x, y + height)
     glEnd()
+    glColor3f(1, 1, 1)
 
 
 def paint_notes(notes):
@@ -132,8 +131,7 @@ class Player():
         self.pause = False
 
     def update(self):
-        glBlitFramebufferEXT(0, 0, 730, 650, 0, 0, 730, 650,
-                             GL_COLOR_BUFFER_BIT, GL_NEAREST)
+        copy_pixels(0, 0, 730, 650, 0, 0)
         for channel in range(16):
             color = 0 if channel != self.selection else 2
             info = channelinfo(self.midi, channel)
@@ -359,21 +357,20 @@ def main(path=None):
 
     (width, height, img) = read_image('mixer.ppm')
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+    texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, img)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
 
-    rbo = c_uint(int(glGenRenderbuffersEXT(1)))
-    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rbo)
-    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGB, width, height)
+    glMatrixMode(GL_TEXTURE)
+    glLoadIdentity()
+    glScale(1/width, 1/height, 1)
 
-    fbo = c_uint(int(glGenFramebuffersEXT(1)))
-    glBindFramebufferEXT(GL_READ_FRAMEBUFFER_EXT, fbo)
-    glFramebufferRenderbufferEXT(GL_READ_FRAMEBUFFER_EXT,
-                                 GL_COLOR_ATTACHMENT0_EXT,
-                                 GL_RENDERBUFFER_EXT, rbo)
-
-    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, fbo)
-    glClear(GL_COLOR_BUFFER_BIT)
-    glDrawPixels(width, height, GL_RGB, GL_UNSIGNED_BYTE, img)
-    glBindFramebufferEXT(GL_DRAW_FRAMEBUFFER_EXT, 0)
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glOrtho(0, 730, 0, 650, 0, 1)
 
     player = Player(win, path, width, height)
 
