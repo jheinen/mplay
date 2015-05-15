@@ -116,7 +116,7 @@ def paint_notes(notes):
             draw_rect(x, 14, 10, 24)
 
 
-class Player():
+class Player:
     def __init__(self, win, path, width, height):
         self.win = win
         self.midi = read(path)
