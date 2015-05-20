@@ -16,24 +16,16 @@ CFStringCreateWithCString = _prototype(("CFStringCreateWithCString", cf),
 
 
 class MIDIPacket(Structure):
-    pass
-
-
-MIDIPacket._fields_ = [
-    ("timestamp", c_uint64),
-    ("length", c_uint16),
-    ("data", c_uint8 * 17),
-]
+    _pack_ = 1
+    _fields_ = [("timestamp", c_uint64),
+                ("length", c_uint16),
+                ("data", c_ubyte * 17)]
 
 
 class MIDIPacketList(Structure):
-    pass
+    _fields_ = [("numPackets", c_uint32),
+                ("packet", MIDIPacket * 100)]
 
-
-MIDIPacketList._fields_ = [
-    ("length", c_uint32),
-    ("packet", MIDIPacket * 100),
-]
 
 midi = CDLL(ctypes.util.find_library("CoreMIDI"))
 _prototype = CFUNCTYPE(c_int16, c_void_p, c_void_p, c_void_p, POINTER(c_uint32))
@@ -53,11 +45,35 @@ _paramflags = (
 )
 MIDIOutputPortCreate = _prototype(("MIDIOutputPortCreate", midi), _paramflags)
 
+_prototype = CFUNCTYPE(c_int16, c_uint32, c_void_p, c_void_p, c_void_p, POINTER(c_uint32))
+_paramflags = (
+    (1, "client"),
+    (1, "name"),
+    (1, "readProc", None),
+    (1, "refCon", None),
+    (1, "outPort"),
+)
+MIDIInputPortCreate = _prototype(("MIDIInputPortCreate", midi), _paramflags)
+
 _prototype = CFUNCTYPE(c_uint32, c_uint32)
 _paramflags = (
     (1, "destIndex"),
 )
 MIDIGetDestination = _prototype(("MIDIGetDestination", midi), _paramflags)
+
+_prototype = CFUNCTYPE(c_uint32, c_uint32)
+_paramflags = (
+    (1, "srcIndex"),
+)
+MIDIGetSource = _prototype(("MIDIGetSource", midi), _paramflags)
+
+_prototype = CFUNCTYPE(c_uint32, c_uint32, c_uint32, c_void_p)
+_paramflags = (
+    (1, "port"),
+    (1, "source"),
+    (1, "connRefCon", None),
+)
+MIDIPortConnectSource = _prototype(("MIDIPortConnectSource", midi), _paramflags)
 
 _prototype = CFUNCTYPE(POINTER(MIDIPacket), POINTER(MIDIPacketList))
 _paramflags = (
@@ -88,6 +104,14 @@ _paramflags = (
 
 MIDISend = _prototype(("MIDISend", midi), _paramflags)
 
+def readProc(pktlist, readProcRefCon, srcConnRefCon):
+    packet  = pktlist.contents.packet[0]
+    print(packet.timestamp, packet.length,
+          packet.data[0], packet.data[1], packet.data[2])
+
+CALLBACKFUNC = CFUNCTYPE(None, POINTER(MIDIPacketList), c_void_p, c_void_p)
+callback = CALLBACKFUNC(readProc)
+
 _prototype = CFUNCTYPE(c_int16, c_uint32)
 _paramflags = (
     (1, "dest"),
@@ -102,16 +126,11 @@ MIDIClientDispose = _prototype(("MIDIClientDispose", midi), _paramflags)
 
 
 class AudioComponentDescription(ctypes.Structure):
-    pass
-
-
-AudioComponentDescription._fields_ = [
-    ("componentType", ctypes.c_uint32),
-    ("componentSubType", ctypes.c_uint32),
-    ("componentManufacturer", ctypes.c_uint32),
-    ("componentFlags", ctypes.c_uint32),
-    ("componentFlagsMask", ctypes.c_uint32),
-]
+    _fields_ = [("componentType", ctypes.c_uint32),
+                ("componentSubType", ctypes.c_uint32),
+                ("componentManufacturer", ctypes.c_uint32),
+                ("componentFlags", ctypes.c_uint32),
+                ("componentFlagsMask", ctypes.c_uint32)]
 
 
 def fatal(message):
@@ -122,20 +141,34 @@ def fatal(message):
 class CoreMidiDevice:
     def __init__(self):
         name = CFStringCreateWithCString(None, "mplay", kCFStringEncodingUTF8)
-        portName = CFStringCreateWithCString(None, "Output port",
-                                             kCFStringEncodingUTF8)
+        outputPort = CFStringCreateWithCString(None, "Output port",
+                                               kCFStringEncodingUTF8)
+        inputPort = CFStringCreateWithCString(None, "Input port",
+                                              kCFStringEncodingUTF8)
 
         self.client = c_uint32()
         if MIDIClientCreate(name, None, None, byref(self.client)) != 0:
             fatal('cannot create MIDI client')
 
         self.port = c_uint32()
-        if MIDIOutputPortCreate(self.client, portName, byref(self.port)) != 0:
+        if MIDIOutputPortCreate(self.client, outputPort, byref(self.port)) != 0:
             fatal('cannot create MIDI output port')
 
         self.dest = MIDIGetDestination(0)
         if self.dest == 0:
             fatal('cannot get MIDI destination')
+
+        self.input_port = c_uint32()
+        if MIDIInputPortCreate(self.client, inputPort, callback, None,
+                               byref(self.input_port)) != 0:
+            fatal('cannot create MIDI input port')
+
+        self.src = MIDIGetSource(0)
+        if self.src == 0:
+            fatal('cannot get MIDI source')
+
+        if MIDIPortConnectSource(self.input_port, self.src, None) != 0:
+            fatal('cannot connect MIDI input source')
 
         self.pktlist = MIDIPacketList()
 

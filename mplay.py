@@ -5,6 +5,7 @@ from __future__ import absolute_import, division
 import sys
 from math import sin, cos, atan2, pi
 from time import sleep
+from os.path import join, dirname
 
 from OpenGL.GLUT import (glutAddMenuEntry, glutAddSubMenu, glutAttachMenu,
                          glutCreateMenu, glutCreateWindow, glutDisplayFunc,
@@ -354,7 +355,7 @@ def main(path=None):
 
     win = glutCreateWindow(b'MIDI Player')
 
-    (width, height, img) = read_image('mixer.ppm')
+    (width, height, img) = read_image(join(dirname(__file__), 'mixer.ppm'))
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
     texture = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, texture)
