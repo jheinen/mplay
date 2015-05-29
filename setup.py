@@ -12,8 +12,8 @@ setup(
     options={'py2app': {'argv_emulation': True,
                         'iconfile': 'mplay.icns',
                         'plist': {'CFBundleIdentifier': 'de.josefheinen.mplay',
-                                  'CFBundleVersion': '1.0.0',
-                                  'CFBundleShortVersionString': '1.0.0',
+                                  'CFBundleVersion': '1.0.1',
+                                  'CFBundleShortVersionString': '1.0.1',
                                   'NSHumanReadableCopyright': COPYRIGHT}}},
     setup_requires=['py2app', 'pyobjc-framework-cocoa', 'PyOpenGL']
 )
