@@ -1,5 +1,5 @@
 samples
 dist
 .idea
-GLUT32.DLL
+GLUT*.DLL
 Mplay.key

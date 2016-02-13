@@ -554,8 +554,12 @@ class SMF:
                     if data[0] in [13, 10]:
                         self.line = ''
                     else:
-                        self.line += printable(data)
-                        self.text = self.line
+                        if data[-1] in [13, 10]:
+                            self.text = self.line + printable(data[:-1])
+                            self.line = ''
+                        else:
+                            self.line += printable(data)
+                            self.text = self.line
                 elif me_type == 0x51:
                     now = time()
                     tempo = self.tempo
