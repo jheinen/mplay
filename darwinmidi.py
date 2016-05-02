@@ -161,14 +161,14 @@ class CoreMidiDevice:
         self.input_port = c_uint32()
         if MIDIInputPortCreate(self.client, inputPort, callback, None,
                                byref(self.input_port)) != 0:
-            fatal('cannot create MIDI input port')
-
-        self.src = MIDIGetSource(0)
-        if self.src == 0:
-            fatal('cannot get MIDI source')
-
-        if MIDIPortConnectSource(self.input_port, self.src, None) != 0:
-            fatal('cannot connect MIDI input source')
+            print('cannot create MIDI input port')
+        else:
+            self.src = MIDIGetSource(0)
+            if self.src == 0:
+                print('cannot get MIDI source')
+            else:
+                if MIDIPortConnectSource(self.input_port, self.src, None) != 0:
+                    fatal('cannot connect MIDI input source')
 
         self.pktlist = MIDIPacketList()
 
