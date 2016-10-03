@@ -248,11 +248,13 @@ class SMF:
                     self.ev.append(
                         [at, me, me_type, self.extractbytes(num_bytes)])
                 elif me_type == 0x20:
-                    self.ev.append([at, me, me_type, self.extractbyte()])
+                    byte1 = self.extractbyte()
+                    self.ev.append([at, me, me_type, byte1])
                     if debug:
                         dbg('%06d Channel Prefix 0x%02x' % (at, byte1))
                 elif me_type == 0x21:
-                    self.ev.append([at, me, me_type, self.extractbyte()])
+                    byte1 = self.extractbyte()
+                    self.ev.append([at, me, me_type, byte1])
                     if debug:
                         dbg('%06d Port Number 0x%02x' % (at, byte1))
                 elif me_type == 0x2f:
@@ -429,6 +431,7 @@ class SMF:
             for byte in buf[start:]:
                 s += sep + '0x%02x' % byte
                 sep = ' '
+            print("%.3f %s" % (time() - self.start, s))
 
     def allnotesoff(self, channel):
         for note in self.channel[channel]['notes']:
@@ -528,8 +531,8 @@ class SMF:
             self.device = dev
             self.device.mididataset1(0x40007f, 0x00)
             sleep(0.04)
-            self.writemidi([0xfc, 0xfa])
             self.start = time()
+            self.writemidi([0xfc, 0xfa])
             self.elapsed_time = self.start
             self.line = ''
         if self.pause != 0:
