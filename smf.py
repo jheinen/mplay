@@ -243,7 +243,7 @@ class SMF:
                     self.ev.append([at, me, me_type, text])
                     if debug:
                         dbg('%06d %s: %s' % (at, meta[me_type],
-                            printable(text)))
+                                             printable(text)))
                 elif me_type <= 0x0f:
                     self.ev.append(
                         [at, me, me_type, self.extractbytes(num_bytes)])

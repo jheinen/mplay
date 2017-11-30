@@ -209,6 +209,7 @@ class Player:
         self.update()
         glutSwapBuffers()
 
+    # noinspection PyUnusedLocal
     def keyboard_func(self, key, x, y):
         if key == b'\x1b':
             setsong(self.midi, action='exit')
